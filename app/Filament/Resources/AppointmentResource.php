@@ -90,40 +90,60 @@ class AppointmentResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('salon.name')
-                    ->numeric()
+                    ->label('Salon')
+                    ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('staff.name')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('service.name')
-                    ->numeric()
-                    ->sortable(),
+
                 Tables\Columns\TextColumn::make('customer_name')
+                    ->label('Customer')
+                    ->searchable()
+                    ->weight('bold'),
+
+                Tables\Columns\TextColumn::make('service.name')
+                    ->label('Service')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('customer_email')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('customer_phone')
-                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('staff.name')
+                    ->label('Staff')
+                    ->placeholder('Anyone'),
+
                 Tables\Columns\TextColumn::make('date')
-                    ->date()
+                    ->date('d.m.Y')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('start_time'),
-                Tables\Columns\TextColumn::make('end_time'),
-                Tables\Columns\TextColumn::make('status'),
-                Tables\Columns\TextColumn::make('confirmation_expires_at')
-                    ->dateTime()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
+
+                Tables\Columns\TextColumn::make('start_time')
+                    ->time('H:i')
+                    ->label('Time'),
+
+                Tables\Columns\TextColumn::make('status')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'pending' => 'warning',
+                        'confirmed' => 'success',
+                        'cancelled' => 'danger',
+                        'expired' => 'gray',
+                    }),
+
+                Tables\Columns\TextColumn::make('customer_phone')
+                    ->label('Phone')
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
+
+                Tables\Columns\TextColumn::make('customer_email')
+                    ->label('Email')
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->defaultSort('date', 'desc')
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('status')
+                    ->options([
+                        'pending' => 'Pending',
+                        'confirmed' => 'Confirmed',
+                        'cancelled' => 'Cancelled',
+                        'expired' => 'Expired',
+                    ]),
+                Tables\Filters\SelectFilter::make('salon_id')
+                    ->relationship('salon', 'name')
+                    ->label('Salon'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

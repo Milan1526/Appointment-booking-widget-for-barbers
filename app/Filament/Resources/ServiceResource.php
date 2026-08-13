@@ -25,19 +25,26 @@ class ServiceResource extends Resource
             ->schema([
                 Forms\Components\Select::make('salon_id')
                     ->relationship('salon', 'name')
-                    ->required(),
+                    ->required()
+                    ->searchable()
+                    ->preload(),
+
                 Forms\Components\TextInput::make('name')
                     ->required()
                     ->maxLength(255),
+
                 Forms\Components\TextInput::make('price')
-                    ->required()
                     ->numeric()
-                    ->prefix('$'),
-                Forms\Components\TextInput::make('duration_minutes')
                     ->required()
-                    ->numeric(),
+                    ->suffix('RSD'),
+
+                Forms\Components\TextInput::make('duration_minutes')
+                    ->numeric()
+                    ->required()
+                    ->suffix('min'),
+
                 Forms\Components\Toggle::make('is_active')
-                    ->required(),
+                    ->default(true),
             ]);
     }
 
@@ -46,29 +53,29 @@ class ServiceResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('salon.name')
-                    ->numeric()
+                    ->label('Salon')
+                    ->searchable()
                     ->sortable(),
+
                 Tables\Columns\TextColumn::make('name')
-                    ->searchable(),
+                    ->searchable()
+                    ->weight('bold'),
+
                 Tables\Columns\TextColumn::make('price')
-                    ->money()
+                    ->money('RSD')
                     ->sortable(),
+
                 Tables\Columns\TextColumn::make('duration_minutes')
-                    ->numeric()
+                    ->label('Duration')
+                    ->suffix(' min')
                     ->sortable(),
+
                 Tables\Columns\IconColumn::make('is_active')
+                    ->label('Active')
                     ->boolean(),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\TernaryFilter::make('is_active'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
