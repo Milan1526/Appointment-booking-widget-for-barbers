@@ -60,9 +60,55 @@
         </div>
     @endif
 
-    {{-- Korak 3: placeholder --}}
+        {{-- Korak 3: Datum i vreme --}}
     @if ($currentStep >= 3)
-        <div class="p-6 border-b text-gray-400 italic">
-            3. Izaberi datum i vreme (sledeći korak, pravimo ga sada)
+        <div class="p-6 border-b">
+            <h2 class="font-semibold text-lg mb-4">3. Izaberi datum i vreme</h2>
+
+            {{-- Dani --}}
+            <div class="flex gap-2 overflow-x-auto pb-2 mb-4">
+                @foreach ($this->availableDays as $day)
+                    <button
+                        wire:click="selectDate('{{ $day->toDateString() }}')"
+                        type="button"
+                        class="flex-shrink-0 flex flex-col items-center px-3 py-2 rounded-lg border transition
+                            {{ $date === $day->toDateString()
+                                ? 'border-orange-500 bg-orange-50 ring-1 ring-orange-500'
+                                : 'border-gray-200 hover:border-gray-300' }}"
+                    >
+                        <span class="text-xs text-gray-500">{{ $day->translatedFormat('D') }}</span>
+                        <span class="font-medium">{{ $day->format('d.m') }}</span>
+                    </button>
+                @endforeach
+            </div>
+
+            {{-- Slotovi --}}
+            @if ($date)
+                @if (count($this->availableSlots) > 0)
+                    <div class="flex flex-wrap gap-2">
+                        @foreach ($this->availableSlots as $slot)
+                            <button
+                                wire:click="selectSlot('{{ $slot }}')"
+                                type="button"
+                                class="px-4 py-2 rounded-lg border transition
+                                    {{ $start_time === $slot
+                                        ? 'border-orange-500 bg-orange-50 ring-1 ring-orange-500'
+                                        : 'border-gray-200 hover:border-gray-300' }}"
+                            >
+                                {{ $slot }}
+                            </button>
+                        @endforeach
+                    </div>
+                @else
+                    <p class="text-gray-500 text-sm">Nema slobodnih termina za izabrani datum.</p>
+                @endif
+            @endif
+        </div>
+    @endif
+
+    {{-- Korak 4: placeholder --}}
+    @if ($currentStep >= 4)
+        <div class="p-6 text-gray-400 italic">
+            4. Tvoji podaci (sledeći korak, pravimo ga sada)
         </div>
     @endif
