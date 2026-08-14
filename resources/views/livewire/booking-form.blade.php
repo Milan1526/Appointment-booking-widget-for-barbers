@@ -106,9 +106,69 @@
         </div>
     @endif
 
-    {{-- Korak 4: placeholder --}}
-    @if ($currentStep >= 4)
-        <div class="p-6 text-gray-400 italic">
-            4. Tvoji podaci (sledeći korak, pravimo ga sada)
+    {{-- Korak 4: Podaci klijenta --}}
+    @if ($currentStep >= 4 && ! $bookingComplete)
+        <div class="p-6">
+            <h2 class="font-semibold text-lg mb-4">4. Tvoji podaci</h2>
+
+            @error('general')
+                <div class="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+                    {{ $message }}
+                </div>
+            @enderror
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Ime i prezime</label>
+                    <input
+                        type="text"
+                        wire:model="customer_name"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
+                        placeholder="Marko Marković"
+                    >
+                    @error('customer_name') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input
+                        type="email"
+                        wire:model="customer_email"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
+                        placeholder="marko@example.com"
+                    >
+                    @error('customer_email') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Telefon</label>
+                    <input
+                        type="text"
+                        wire:model="customer_phone"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
+                        placeholder="064/123-456"
+                    >
+                    @error('customer_phone') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
+                </div>
+
+                <button
+                    wire:click="submit"
+                    type="button"
+                    class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg transition"
+                >
+                    ZAKAŽI TERMIN
+                </button>
+            </div>
+        </div>
+    @endif
+
+    {{-- Poruka o uspehu --}}
+    @if ($bookingComplete)
+        <div class="p-8 text-center">
+            <div class="text-5xl mb-4">✅</div>
+            <h2 class="font-semibold text-xl mb-2">Termin je rezervisan!</h2>
+            <p class="text-gray-600">
+                Poslali smo ti email na <strong>{{ $customer_email }}</strong> — potvrdi termin klikom na link u mejlu u narednih 15 minuta, u suprotnom će termin biti otkazan.
+            </p>
         </div>
     @endif
