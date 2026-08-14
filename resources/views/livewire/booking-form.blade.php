@@ -27,11 +27,42 @@
         </div>
     </div>
 
-    {{-- Korak 2: placeholder --}}
+   {{-- Korak 2: Izbor majstora --}}
     @if ($currentStep >= 2)
-        <div class="p-6 border-b text-gray-400 italic">
-            2. Izaberi majstora (sledeći korak, pravimo ga sada)
+        <div class="p-6 border-b">
+            <h2 class="font-semibold text-lg mb-4">2. Izaberi majstora</h2>
+
+            <div class="flex flex-wrap gap-2">
+                @foreach ($staff as $member)
+                    <button
+                        wire:click="selectStaff({{ $member->id }})"
+                        type="button"
+                        class="px-4 py-2 rounded-full border transition
+                            {{ $staffChosen && $staff_id === $member->id
+                                ? 'border-orange-500 bg-orange-50 ring-1 ring-orange-500'
+                                : 'border-gray-200 hover:border-gray-300' }}"
+                    >
+                        {{ $member->name }}
+                    </button>
+                @endforeach
+
+                <button
+                    wire:click="selectStaff(null)"
+                    type="button"
+                    class="px-4 py-2 rounded-full border transition
+                        {{ $staffChosen && $staff_id === null
+                            ? 'border-orange-500 bg-orange-50 ring-1 ring-orange-500'
+                            : 'border-gray-200 hover:border-gray-300' }}"
+                >
+                    Bilo ko
+                </button>
+            </div>
         </div>
     @endif
 
-</div>
+    {{-- Korak 3: placeholder --}}
+    @if ($currentStep >= 3)
+        <div class="p-6 border-b text-gray-400 italic">
+            3. Izaberi datum i vreme (sledeći korak, pravimo ga sada)
+        </div>
+    @endif
