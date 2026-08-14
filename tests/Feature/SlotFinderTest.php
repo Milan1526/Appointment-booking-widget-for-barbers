@@ -1,0 +1,73 @@
+<?php
+
+use App\Models\Appointment;
+use App\Models\Salon;
+use App\Models\Service;
+use App\Models\Staff;
+use App\Services\SlotFinder;
+use Carbon\Carbon;
+
+it('returns empty slots on a non-working day (sunday)', function () {
+    $salon = Salon::create(['name' => 'Test Salon', 'slug' => 'test-salon']);
+    $service = Service::create(['salon_id' => $salon->id, 'name' => 'Šišanje', 'price' => 800, 'duration_minutes' => 30]);
+
+    $sunday = Carbon::parse('next sunday');
+
+    $slots = (new SlotFinder())->availableSlots($sunday, $service, null, $salon->id);
+
+    expect($slots)->toBeEmpty();
+});
+
+it('excludes a slot that overlaps with an existing confirmed appointment for the chosen staff', function () {
+    $salon = Salon::create(['name' => 'Test Salon', 'slug' => 'test-salon']);
+    $staff = Staff::create(['salon_id' => $salon->id, 'name' => 'Boki']);
+    $service = Service::create(['salon_id' => $salon->id, 'name' => 'Šišanje', 'price' => 800, 'duration_minutes' => 30]);
+
+    $monday = Carbon::parse('next monday');
+
+    Appointment::create([
+        'salon_id' => $salon->id,
+        'staff_id' => $staff->id,
+        'service_id' => $service->id,
+        'customer_name' => 'Test Kupac',
+        'customer_email' => 'test@example.com',
+        'customer_phone' => '000',
+        'date' => $monday->toDateString(),
+        'start_time' => '10:00',
+        'end_time' => '10:30',
+        'status' => 'confirmed',
+    ]);
+
+    $slots = (new SlotFinder())->availableSlots($monday, $service, $staff->id, $salon->id);
+
+    expect($slots)->not->toContain('10:00');
+    expect($slots)->toContain('09:00');
+    expect($slots)->toContain('10:30');
+});
+
+it('offers a slot for "anyone" if at least one staff member is free', function () {
+    $salon = Salon::create(['name' => 'Test Salon', 'slug' => 'test-salon']);
+    $boki = Staff::create(['salon_id' => $salon->id, 'name' => 'Boki']);
+    $sale = Staff::create(['salon_id' => $salon->id, 'name' => 'Sale']);
+    $service = Service::create(['salon_id' => $salon->id, 'name' => 'Šišanje', 'price' => 800, 'duration_minutes' => 30]);
+
+    $monday = Carbon::parse('next monday');
+
+    // Boki je zauzet u 10:00, Sale je slobodan
+    Appointment::create([
+        'salon_id' => $salon->id,
+        'staff_id' => $boki->id,
+        'service_id' => $service->id,
+        'customer_name' => 'Test Kupac',
+        'customer_email' => 'test@example.com',
+        'customer_phone' => '000',
+        'date' => $monday->toDateString(),
+        'start_time' => '10:00',
+        'end_time' => '10:30',
+        'status' => 'confirmed',
+    ]);
+
+    $slots = (new SlotFinder())->availableSlots($monday, $service, null, $salon->id);
+
+    expect($slots)->toContain('10:00'); // jer je Sale slobodan
+});
