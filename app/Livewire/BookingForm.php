@@ -1,6 +1,8 @@
 <?php
 
 namespace App\Livewire;
+use App\Mail\AppointmentConfirmation;
+use Illuminate\Support\Facades\Mail;
 
 use App\Models\Appointment;
 use App\Models\Salon;
@@ -122,22 +124,24 @@ class BookingForm extends Component
         $startTime = Carbon::parse($this->start_time);
         $endTime = $startTime->copy()->addMinutes($service->duration_minutes);
 
-        Appointment::create([
-            'salon_id' => $salon->id,
-            'staff_id' => $this->staff_id,
-            'service_id' => $this->service_id,
-            'customer_name' => $this->customer_name,
-            'customer_email' => $this->customer_email,
-            'customer_phone' => $this->customer_phone,
-            'date' => $this->date,
-            'start_time' => $startTime->format('H:i'),
-            'end_time' => $endTime->format('H:i'),
-            'status' => 'pending',
-            'confirmation_token' => Str::random(40),
-            'confirmation_expires_at' => now()->addMinutes(15),
-        ]);
+        $appointment = Appointment::create([
+        'salon_id' => $salon->id,
+        'staff_id' => $this->staff_id,
+        'service_id' => $this->service_id,
+        'customer_name' => $this->customer_name,
+        'customer_email' => $this->customer_email,
+        'customer_phone' => $this->customer_phone,
+        'date' => $this->date,
+        'start_time' => $startTime->format('H:i'),
+        'end_time' => $endTime->format('H:i'),
+        'status' => 'pending',
+        'confirmation_token' => Str::random(40),
+        'confirmation_expires_at' => now()->addMinutes(15),
+    ]);
 
-        $this->bookingComplete = true;
+    Mail::to($appointment->customer_email)->send(new AppointmentConfirmation($appointment));
+
+    $this->bookingComplete = true;
     }
 
     public function render()
