@@ -71,3 +71,28 @@ it('offers a slot for "anyone" if at least one staff member is free', function (
 
     expect($slots)->toContain('10:00'); // jer je Sale slobodan
 });
+
+it('does not offer slots earlier than the minimum notice period today', function () {
+    Carbon::setTestNow(Carbon::parse('today 10:00')); // simuliramo da je "sada" 10:00
+
+    $salon = Salon::create(['name' => 'Test Salon', 'slug' => 'test-salon']);
+    Staff::create(['salon_id' => $salon->id, 'name' => 'Boki']);
+    $service = Service::create(['salon_id' => $salon->id, 'name' => 'Šišanje', 'price' => 800, 'duration_minutes' => 30]);
+
+    $today = Carbon::today();
+
+    // Preskačemo test ako je danas neradni dan (nedelja) — testiramo samo logiku roka
+    if (! in_array($today->dayOfWeek, config('booking.working_days'))) {
+        Carbon::setTestNow(); // reset
+        $this->markTestSkipped('Danas je neradni dan, test roka nije primenjiv.');
+    }
+
+    $slots = (new SlotFinder())->availableSlots($today, $service, null, $salon->id);
+
+    // min_notice_minutes = 60, "sada" je 10:00 → 10:30 je premalo unapred, 11:00 je OK
+    expect($slots)->not->toContain('10:00');
+    expect($slots)->not->toContain('10:30');
+    expect($slots)->toContain('11:00');
+
+    Carbon::setTestNow(); // reset na pravo vreme, važno za ostale testove
+});

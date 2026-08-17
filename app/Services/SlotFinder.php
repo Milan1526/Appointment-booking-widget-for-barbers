@@ -9,19 +9,14 @@ use Carbon\Carbon;
 
 class SlotFinder
 {
-    /**
-     * Vraća listu slobodnih termina (kao "H:i" stringove) za dati dan, uslugu i (opciono) majstora.
-     */
     public function availableSlots(Carbon $date, Service $service, ?int $staffId, int $salonId): array
     {
         $workingDays = config('booking.working_days');
 
-        // Salon ne radi tog dana (npr. nedelja)
         if (! in_array($date->dayOfWeek, $workingDays)) {
             return [];
         }
 
-        // Koje majstore proveravamo — jednog izabranog, ili sve aktivne (za "Bilo ko")
         $staffMembers = $staffId
             ? Staff::where('id', $staffId)->get()
             : Staff::where('salon_id', $salonId)->where('is_active', true)->get();
@@ -34,9 +29,11 @@ class SlotFinder
         $workStart = Carbon::parse($date->toDateString() . ' ' . config('booking.working_hours.start'));
         $workEnd = Carbon::parse($date->toDateString() . ' ' . config('booking.working_hours.end'));
 
+        // Najraniji dozvoljen trenutak za start termina — sprečava zakazivanje u prošlosti ili "za 5 minuta"
+        $earliestAllowed = Carbon::now()->addMinutes(config('booking.min_notice_minutes'));
+
         $duration = $service->duration_minutes;
 
-        // Unapred učitaj sve postojeće termine tog dana za sve relevantne majstore (1 upit umesto N)
         $existingAppointments = Appointment::whereIn('staff_id', $staffMembers->pluck('id'))
             ->whereDate('date', $date->toDateString())
             ->whereIn('status', ['pending', 'confirmed'])
@@ -48,7 +45,12 @@ class SlotFinder
         while ($slotStart->copy()->addMinutes($duration)->lte($workEnd)) {
             $slotEnd = $slotStart->copy()->addMinutes($duration);
 
-            // Slot je slobodan ako BAR JEDAN od proveravanih majstora nema preklapanje
+            // Preskoči slotove koji su prerani (prošlost ili premalo unapred)
+            if ($slotStart->lt($earliestAllowed)) {
+                $slotStart->addMinutes($interval);
+                continue;
+            }
+
             $isFreeForAtLeastOneStaff = $staffMembers->contains(function (Staff $staff) use ($existingAppointments, $slotStart, $slotEnd) {
                 return ! $existingAppointments
                     ->where('staff_id', $staff->id)
