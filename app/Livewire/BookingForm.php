@@ -3,6 +3,7 @@
 namespace App\Livewire;
 use App\Mail\AppointmentConfirmation;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
 
 use App\Models\Appointment;
 use App\Models\Salon;
@@ -98,6 +99,26 @@ class BookingForm extends Component
     {
         $this->validate();
 
+        $rateLimitKey = 'booking-attempts:' . request()->ip();
+
+        if (RateLimiter::tooManyAttempts($rateLimitKey, maxAttempts: 4)) {
+            $seconds = RateLimiter::availableIn($rateLimitKey);
+            $hours = ceil($seconds / 3600);
+
+            $this->addError('general', "Dostigao si limit zakazivanja sa ove IP adrese. Pokušaj ponovo za otprilike {$hours}h.");
+            return;
+        }
+
+        $hasPendingAppointment = Appointment::where('customer_email', $this->customer_email)
+        ->where('status', 'pending')
+        ->where('confirmation_expires_at', '>', now())
+        ->exists();
+
+        if ($hasPendingAppointment) {
+            $this->addError('general', 'Već imaš termin koji čeka potvrdu na ovaj email. Proveri svoj inbox, ili sačekaj da prethodni istekne.');
+            return;
+        }
+
         if (! $this->service_id || ! $this->date || ! $this->start_time) {
             $this->addError('general', 'Nedostaju podaci o terminu. Vrati se na prethodne korake.');
             return;
@@ -141,7 +162,19 @@ class BookingForm extends Component
 
     Mail::to($appointment->customer_email)->send(new AppointmentConfirmation($appointment));
 
+    RateLimiter::hit($rateLimitKey, decaySeconds: 60 * 60 * 24); // broji ovaj pokušaj, pamti 24h
+
     $this->bookingComplete = true;
+    }
+
+    public function bookAnother(): void
+    {
+        $this->reset([
+            'currentStep', 'service_id', 'staff_id', 'staffChosen',
+            'date', 'start_time', 'customer_name', 'customer_email',
+            'customer_phone', 'bookingComplete',
+        ]);
+        $this->currentStep = 1;
     }
 
     public function render()

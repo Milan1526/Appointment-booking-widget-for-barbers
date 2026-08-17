@@ -164,11 +164,31 @@
 
     {{-- Poruka o uspehu --}}
     @if ($bookingComplete)
-        <div class="p-8 text-center">
-            <div class="text-5xl mb-4">✅</div>
-            <h2 class="font-semibold text-xl mb-2">Termin je rezervisan!</h2>
-            <p class="text-gray-600">
-                Poslali smo ti email na <strong>{{ $customer_email }}</strong> — potvrdi termin klikom na link u mejlu u narednih 15 minuta, u suprotnom će termin biti otkazan.
-            </p>
-        </div>
+    <div
+        class="p-8 text-center"
+        x-data="{ secondsLeft: 15 }"
+        x-init="
+            const interval = setInterval(() => {
+                secondsLeft--;
+                if (secondsLeft <= 0) {
+                    clearInterval(interval);
+                    $wire.bookAnother();
+                }
+            }, 1000);
+        "
+    >
+        <div class="text-5xl mb-4">✅</div>
+        <h2 class="font-semibold text-xl mb-2">Termin je rezervisan!</h2>
+        <p class="text-gray-600 mb-6">
+            Poslali smo ti email na <strong>{{ $customer_email }}</strong> — potvrdi termin klikom na link u mejlu u narednih 15 minuta, u suprotnom će termin biti otkazan.
+        </p>
+
+        <button
+            wire:click="bookAnother"
+            type="button"
+            class="text-sm text-orange-600 hover:text-orange-700 font-medium"
+        >
+            Zakaži još jedan termin sada (ili sačekaj <span x-text="secondsLeft"></span>s za automatski reset)
+        </button>
+    </div>
     @endif
