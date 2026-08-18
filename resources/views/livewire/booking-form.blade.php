@@ -112,7 +112,13 @@
             <h2 class="font-semibold text-lg mb-4">4. Tvoji podaci</h2>
 
             @error('general')
-                <div class="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+                <div
+                    x-data="{ show: true }"
+                    x-init="setTimeout(() => show = false, 6000)"
+                    x-show="show"
+                    x-transition
+                    class="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm"
+                >
                     {{ $message }}
                 </div>
             @enderror
@@ -153,10 +159,13 @@
 
                 <button
                     wire:click="submit"
+                    wire:loading.attr="disabled"
+                    wire:target="submit"
                     type="button"
-                    class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg transition"
+                    class="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-lg transition"
                 >
-                    ZAKAŽI TERMIN
+                    <span wire:loading.remove wire:target="submit">ZAKAŽI TERMIN</span>
+                    <span wire:loading wire:target="submit">Šalje se...</span>
                 </button>
             </div>
         </div>
